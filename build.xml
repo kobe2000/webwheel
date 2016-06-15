@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<project default="build" name="WebWheel">
+
+    <!-- base on jdk1.6 & servlet 2.4 -->
+
+    <property name="version" value="1.0"/>
+    <property name="libpath" location="lib"/>
+
+    <target name="clear">
+        <delete dir="classes"/>
+        <delete dir="build"/>
+        <delete file="webwheel-${version}.jar"/>
+    </target>
+
+    <target name="compile">
+        <mkdir dir="classes"/>
+        <javac srcdir="src" destdir="classes" source="1.6" target="1.6" debug="true">
+            <classpath>
+                <fileset dir="${libpath}"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="build" depends="compile">
+        <mkdir dir="build"/>
+        <copy todir="build">
+            <fileset dir="src" excludes="**/*.java,**/*.html"/>
+            <fileset dir="classes"/>
+            <fileset file="License"/>
+            <fileset file="Notice"/>
+        </copy>
+        <jar basedir="build" jarfile="webwheel-${version}.jar"/>
+        <delete dir="classes"/>
+        <delete dir="build"/>
+    </target>
+
+    <target name="javadoc">
+        <mkdir dir="javadoc"/>
+        <delete file="javadoc/**"/>
+        <javadoc sourcepath="src" destdir="javadoc" locale="en" overview="src/overview.html"
+                 encoding="utf-8" docencoding="utf-8" charset="utf-8" windowtitle="WebWheel">
+            <classpath>
+                <fileset dir="${libpath}">
+                    <include name="**/*.jar"/>
+                </fileset>
+            </classpath>
+            <excludepackage name="cn.webwheel.compiler"/>
+            <doctitle>WebWheel java web framework</doctitle>
+        </javadoc>
+        <jar basedir="javadoc" jarfile="webwheel-${version}-javadoc.jar"/>
+        <delete dir="javadoc"/>
+    </target>
+
+    <target name="zip" depends="build,javadoc">
+        <zip file="webwheel-${version}.zip" basedir=".">
+            <exclude name=".idea/**"/>
+            <exclude name="**/*.ipr"/>
+            <exclude name="**/*.iws"/>
+            <exclude name="**/*.zip"/>
+            <exclude name="**/*.iml"/>
+            <exclude name="**/*.idea"/>
+            <exclude name="out/**"/>
+        </zip>
+    </target>
+
+</project>
