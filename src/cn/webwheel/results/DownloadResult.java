@@ -52,15 +52,20 @@ public class DownloadResult extends SimpleResult {
         this.fileName = fileName;
     }
 
+    protected void setResponseFileName() throws UnsupportedEncodingException {
+        if (fileName != null) {
+            String fn = URLEncoder.encode(fileName, "utf-8");
+            ctx.getResponse().setHeader("Content-Disposition", String.format("attachment;filename=%s;filename*=UTF-8''%s", fn, fn));
+        }
+    }
+
     public void render() throws IOException {
 
         if (contentType != null) {
             ctx.getResponse().setContentType(contentType);
         }
-        if (fileName != null) {
-            String fn = URLEncoder.encode(fileName, "utf-8");
-            ctx.getResponse().setHeader("Content-Disposition", String.format("attachment;filename=\"%s\";filename*=\"UTF-8''%s\"", fn, fn));
-        }
+
+        setResponseFileName();
 
         if (stream != null) {
             output(stream);
