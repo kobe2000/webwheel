@@ -34,13 +34,16 @@ public class JavascriptResult extends SimpleResult {
     public JavascriptResult(String scripts, boolean wrap) {
         this.scripts = scripts;
         this.wrap = wrap;
-        contentType = "application/javascript";
     }
 
     public void render() throws IOException {
+        String ct = contentType;
+        if (ct == null) {
+            ct = wrap ? "text/html" : "application/javascript";
+        }
         if(wrap) {
             ctx.getResponse().setHeader("Cache-Control", "no-cache");
-            ctx.getResponse().setContentType("text/html");
+            ctx.getResponse().setContentType(ct);
             ctx.getResponse().setCharacterEncoding(charset);
             PrintWriter pw = ctx.getResponse().getWriter();
             pw.write("<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><meta http-equiv=\"Cache-Control\" content=\"no-cache\"/><head><script type=\"text/javascript\">");
@@ -48,7 +51,7 @@ public class JavascriptResult extends SimpleResult {
             pw.write("</script></head><body></body></html>");
         } else {
             ctx.getResponse().setHeader("Cache-Control", "no-cache");
-            ctx.getResponse().setContentType(contentType);
+            ctx.getResponse().setContentType(ct);
             ctx.getResponse().setCharacterEncoding(charset);
             ctx.getResponse().getWriter().write(scripts);
         }

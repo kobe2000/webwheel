@@ -44,10 +44,6 @@ public class JsonResult extends SimpleResult {
     protected Map<String, Object> map;
     protected boolean wrapMultipart = defWrapMultipart;
 
-    {
-        contentType = "application/json";
-    }
-
     public JsonResult() {
         map = new HashMap<String, Object>();
     }
@@ -77,7 +73,7 @@ public class JsonResult extends SimpleResult {
         ctx.getResponse().setCharacterEncoding(charset);
         String s = toString();
         if (wrapMultipart && ServletFileUpload.isMultipartContent(ctx.getRequest()) && !"XMLHttpRequest".equals(ctx.getRequest().getHeader("X-Requested-With"))) {
-            ctx.getResponse().setContentType("text/html");
+            ctx.getResponse().setContentType(contentType == null ? "text/html" : contentType);
             PrintWriter pw = ctx.getResponse().getWriter();
             final String s1 = "<textarea>";
             final String s2 = "</textarea>";
@@ -86,7 +82,15 @@ public class JsonResult extends SimpleResult {
             pw.write(s2, 0, s2.length());
             return;
         }
-        ctx.getResponse().setContentType(contentType);
+        String ct = contentType;
+        if (ct == null) {
+            ct = "application/json";
+            String ua = ctx.getRequest().getHeader("User-Agent");
+            if (ua != null && ua.contains("MSIE")) {
+                ct = "text/plain;charset=" + charset;
+            }
+        }
+        ctx.getResponse().setContentType(ct);
         ctx.getResponse().getWriter().write(s);
     }
 
