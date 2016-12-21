@@ -50,7 +50,7 @@ public class ActionSetter {
     private final static Paranamer paranamer = new AdaptiveParanamer(new DefaultParanamer(), new AnnotationParanamer(), new BytecodeReadingParanamer());
 
     @SuppressWarnings("unchecked")
-    public Object[] set(Object action, ActionInfo ai, HttpServletRequest request) {
+    public Object[] set(Object action, ActionInfo ai, HttpServletRequest request) throws IOException {
         SetterConfig cfg = ai.getSetterConfig();
         List<SetterInfo> setters;
         if (action != null) {
@@ -106,6 +106,7 @@ public class ActionSetter {
             if (cfg.getFileUploadFileSizeMax() != 0) {
                 fileUpload.setFileSizeMax(cfg.getFileUploadFileSizeMax());
             }
+            boolean throwe = false;
             try {
                 FileItemIterator it = fileUpload.getItemIterator(request);
                 while (it.hasNext()) {
@@ -123,7 +124,14 @@ public class ActionSetter {
                             params.put(fis.getFieldName(), nss);
                         }
                     } else if (!fis.getName().isEmpty()) {
-                        FileExImpl fileEx = new FileExImpl(File.createTempFile("wfu", null));
+                        File tempFile;
+                        try {
+                            tempFile = File.createTempFile("wfu", null);
+                        } catch (IOException e) {
+                            throwe = true;
+                            throw e;
+                        }
+                        FileExImpl fileEx = new FileExImpl(tempFile);
                         Object o = params.get(fis.getFieldName());
                         if (o == null) {
                             params.put(fis.getFieldName(), new FileEx[]{fileEx});
@@ -144,7 +152,9 @@ public class ActionSetter {
                     ((FileUploadExceptionAware) action).setFileUploadException(e);
                 }
             } catch (IOException e) {
-                //
+                if (throwe) {
+                    throw e;
+                }
             }
         } else {
             params = request.getParameterMap();
