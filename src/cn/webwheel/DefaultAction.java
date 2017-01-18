@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 XueSong Guo.
+ * Copyright 2017 XueSong Guo.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -300,6 +300,14 @@ abstract public class DefaultAction implements WebContextAware {
         return min(val, min, null);
     }
 
+    public String notEmpty(String val, String msg) {
+        return min(val, 1, msg);
+    }
+
+    public String notEmpty(String val) {
+        return notEmpty(val, null);
+    }
+
     public String max(String val, int max, String msg) {
         if (val == null) return null;
         if (val.length() > max) {
@@ -360,6 +368,11 @@ abstract public class DefaultAction implements WebContextAware {
     public String nullIfEmpty(String val) {
         if (val == null) return null;
         if (val.isEmpty()) return null;
+        return val;
+    }
+
+    public String emptyIfNull(String val) {
+        if (val == null) return "";
         return val;
     }
 

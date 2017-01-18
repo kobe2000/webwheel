@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 XueSong Guo.
+ * Copyright 2017 XueSong Guo.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Action method configuration when using {@link Main#autoMap(String)}
+ * Action method configuration when using {@link DefaultMain#autoMap(String)}
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

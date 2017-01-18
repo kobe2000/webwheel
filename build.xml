@@ -4,7 +4,7 @@
 
     <!-- base on jdk1.6 & servlet 2.4 -->
 
-    <property name="version" value="1.0"/>
+    <property name="version" value="1.1"/>
     <property name="libpath" location="lib"/>
 
     <target name="clear">

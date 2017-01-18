@@ -1,5 +1,4 @@
 This product depends on software:
-	MVEL(mvflex expression language) http://mvel.codehaus.org/
+	MVEL(mvflex expression language) https://github.com/mvel/mvel
 	Apache Commons FileUpload http://commons.apache.org/fileupload/
 	Jackson Java JSON-processor http://jackson.codehaus.org/
-	ParaNamer http://paranamer.codehaus.org/

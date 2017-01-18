@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 XueSong Guo.
+ * Copyright 2017 XueSong Guo.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package cn.webwheel;
 
 import cn.webwheel.setters.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.thoughtworks.paranamer.*;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
@@ -46,8 +45,6 @@ public class ActionSetter {
     private Map<Method, List<SetterInfo>> argMap = new HashMap<Method, List<SetterInfo>>();
 
     private final String WRPName = "WebWheelRequestParams";
-
-    private final static Paranamer paranamer = new AdaptiveParanamer(new DefaultParanamer(), new AnnotationParanamer(), new BytecodeReadingParanamer());
 
     @SuppressWarnings("unchecked")
     public Object[] set(Object action, ActionInfo ai, HttpServletRequest request) throws IOException {
@@ -235,27 +232,31 @@ public class ActionSetter {
         return null;
     }
 
-    private List<SetterInfo> parseArgs(Method method) {
+    private List<SetterInfo> parseArgs(Method method) throws IOException {
         Annotation[][] as = method.getParameterAnnotations();
         if (as.length == 0) {
             return Collections.emptyList();
         }
-        String[] names = paranamer.lookupParameterNames(method, false);
-        if (names == null || names.length != as.length) names = new String[as.length];
+        String[] names = MethodParameterNames.lookup(method);
+        if (names == null || names.length != as.length) {
+            names = new String[as.length];
+        }
         for (int i = 0; i < names.length; i++) {
-            if (method.getParameterTypes()[i].isArray()) {
-                if (names[i] != null) names[i] += "[]";
-            }
             for (int j = 0; j < as[i].length; j++) {
                 if (as[i][j] instanceof WebParam) {
                     String v = ((WebParam) as[i][j]).value();
                     if (!v.isEmpty()) {
                         names[i] = v;
+                        break;
                     }
                 }
             }
             if (names[i] == null) {
                 logger.severe("need WebParam at argument[" + i + "] in " + method);
+                names[i] = "arg" + i;
+            }
+            if (method.getParameterTypes()[i].isArray()) {
+                if (names[i] != null) names[i] += "[]";
             }
         }
         List<SetterInfo> list = new ArrayList<SetterInfo>();
@@ -310,70 +311,28 @@ public class ActionSetter {
         }
 
         Method[] methods = cls.getMethods();
-        List<Method> maybeGetters = new ArrayList<Method>();
         for (int i = methods.length - 1; i >= 0; i--) {
             Method method = methods[i];
             WebParam param = method.getAnnotation(WebParam.class);
-            if (param == null) continue;
             String name = isSetter(method);
             if (name == null) {
-                maybeGetters.add(method);
                 continue;
             }
             if (method.getParameterTypes()[0].isArray()) {
                 name += "[]";
             }
-            if (!param.value().isEmpty()) {
+            if (param != null && !param.value().isEmpty()) {
                 name = param.value();
             }
             SetterInfo si = getSetterInfo(method, name);
             if (si == null) {
-                logger.severe("wrong WebParam used at " + method);
+                if (param != null) {
+                    logger.severe("wrong WebParam used at " + method);
+                }
                 continue;
             }
             list.add(si);
         }
-        for (Method method : maybeGetters) {
-            String name = isGetter(method);
-            if (name == null) {
-                logger.severe("wrong WebParam used at " + method);
-                continue;
-            }
-            if (method.getReturnType().isArray()) {
-                name += "[]";
-            }
-            WebParam param = method.getAnnotation(WebParam.class);
-            if (!param.value().isEmpty()) {
-                name = param.value();
-            }
-            BeanSetter beanSetter = BeanSetter.create(method.getReturnType(), this);
-            if (beanSetter == null) {
-                logger.severe("wrong WebParam used at " + method);
-                continue;
-            }
-            boolean find = false;
-            for (SetterInfo si : list) {
-                if (!si.paramName.equals(name)) continue;
-                if (!(si.setter instanceof BeanSetter)) continue;
-                if (!(si.member instanceof Method)) continue;
-                if (((Method) si.member).getParameterTypes().length != 1) continue;
-                if (((Method) si.member).getParameterTypes()[0] != method.getReturnType()) continue;
-                find = true;
-                BeanSetter bs = (BeanSetter) si.setter;
-                bs.setGetter(method);
-                break;
-            }
-            if (find) {
-                continue;
-            }
-            SetterInfo si = new SetterInfo();
-            si.paramName = name;
-            si.member = method;
-            si.setter = beanSetter;
-            beanSetter.setGetter(method);
-            list.add(si);
-        }
-
         return list;
     }
 

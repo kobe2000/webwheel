@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 XueSong Guo.
+ * Copyright 2017 XueSong Guo.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ public class BeanSetter extends AbstractSetter<Object> {
 
     private List<SetterInfo> setters = new ArrayList<SetterInfo>();
     private Class<?> type;
-    private Method getter;
 
     private static Map<Class, BeanSetter> beanSetterMap = new HashMap<Class, BeanSetter>();
 
@@ -57,51 +56,11 @@ public class BeanSetter extends AbstractSetter<Object> {
                 setters.add(si);
             }
         }
-        for (int i = methods.length - 1; i >= 0; i--) {
-            Method m = methods[i];
-            String name = ActionSetter.isGetter(m);
-            if (name == null) continue;
-            if (m.getReturnType().isArray()) name += "[]";
-            BeanSetter beanSetter = BeanSetter.create(m.getReturnType(), actionSetter);
-            if (beanSetter == null) {
-                continue;
-            }
-            boolean find = false;
-            for (SetterInfo si : setters) {
-                if (!si.paramName.equals(name)) continue;
-                if (!(si.setter instanceof BeanSetter)) continue;
-                if (!(si.member instanceof Method)) continue;
-                if (((Method) si.member).getParameterTypes().length != 1) continue;
-                if (((Method) si.member).getParameterTypes()[0] != m.getReturnType()) continue;
-                find = true;
-                BeanSetter bs = (BeanSetter) si.setter;
-                bs.setGetter(m);
-                break;
-            }
-            if (find) {
-                continue;
-            }
-            SetterInfo si = new SetterInfo();
-            si.paramName = name;
-            si.member = m;
-            si.setter = beanSetter;
-            beanSetter.setGetter(m);
-            setters.add(si);
-        }
     }
 
     @Override
     public Object set(Object instance, Member member, Map<String, Object> params, String paramName) {
         Object bean = null;
-        if (getter != null) {
-            try {
-                bean = getter.invoke(instance);
-            } catch (IllegalAccessException ignored) {
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e.getCause());
-            }
-            if (bean == null && member == getter) return null;
-        }
         for (SetterInfo si : setters) {
             String name = paramName + '.' + si.paramName;
             if (!params.containsKey(name)) {
@@ -116,17 +75,8 @@ public class BeanSetter extends AbstractSetter<Object> {
             }
             si.setter.set(bean, si.member, params, paramName + '.' + si.paramName);
         }
-        if (bean == null) {
-            return null;
-        }
-        if (member != getter) {
-            set(instance, member, bean);
-        }
+        set(instance, member, bean);
         return bean;
-    }
-
-    public void setGetter(Method getter) {
-        this.getter = getter;
     }
 
     public static BeanSetter create(Class cls, ActionSetter actionSetter) {
@@ -140,7 +90,10 @@ public class BeanSetter extends AbstractSetter<Object> {
             return null;
         }
         BeanSetter si = new BeanSetter(cls, actionSetter);
-        if (si.setters.isEmpty()) return null;
+        if (si.setters.isEmpty()) {
+            beanSetterMap.remove(cls);
+            return null;
+        }
         return si;
     }
 }
