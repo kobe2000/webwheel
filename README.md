@@ -98,7 +98,9 @@ Well done! This is a tiny but complete WebWheel application.
 There are more wonderful features to be continued:
 * [Action Router](doc/ActionRouter.md)
 * [Action Setter](doc/ActionSetter.md)
+* [Result Interpreter](doc/ResultInterpreter.md)
 * [Template Engine](doc/TemplateEngine.md)
+* [DefaultAction & DefaultPage](doc/DefaultActionPage.md)
 
 #Depends
 WebWheel depends on and thanks:

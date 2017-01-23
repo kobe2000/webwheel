@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mvel2.MVEL;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Array;
 import java.net.URLEncoder;
@@ -138,6 +137,7 @@ public class TemplateRenderer {
             if(delegate.write(writer, obj)) return;
         }
         if (!var.raw) {
+            String s;
             switch (var.ctx) {
                 case PlainText:
                     writer.write(obj.toString().replace("<", "&lt;"));
@@ -146,19 +146,21 @@ public class TemplateRenderer {
                     writer.write(obj.toString().replace("\"", "&quot;"));
                     return;
                 case Javascript:
-                    writer.write(objectMapper.writeValueAsString(obj));
-                    return;
                 case JavascriptString:
-                    String s = objectMapper.writeValueAsString(obj.toString());
-                    writer.write(s.substring(1, s.length() - 1));
+                    s = objectMapper.writeValueAsString(obj);
+                    if (s.length() > 1 && s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"') {
+                        if (var.ctx == OutputContext.JavascriptString) {
+                            writer.write(s.substring(1, s.length() - 1));
+                        } else {
+                            writer.write('\'' + s.substring(1, s.length() - 1) + '\'');
+                        }
+                    } else {
+                        writer.write(s);
+                    }
                     return;
                 case HrefValue:
-                    try {
-                        writer.write(URLEncoder.encode(obj.toString(), "utf-8"));
-                        return;
-                    } catch (UnsupportedEncodingException ignored) {
-                    }
-                    break;
+                    writer.write(URLEncoder.encode(obj.toString(), "utf-8"));
+                    return;
             }
         }
         writer.write(obj.toString());
